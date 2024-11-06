@@ -1,0 +1,28 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#define ALPHABET_LENGTH 26
+void encrypt(char text[], char cipherAlphabet[]) {
+    char plainAlphabet[ALPHABET_LENGTH] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    int i; 
+    for (i = 0; text[i] != '\0'; i++) {
+        if (isupper(text[i])) {
+            int index = text[i] - 'A'; 
+            text[i] = cipherAlphabet[index]; 
+        }
+        else if (islower(text[i])) {
+            int index = text[i] - 'a'; 
+            text[i] = tolower(cipherAlphabet[index]); 
+        }
+    }
+}
+int main() {
+    char text[100];
+    char cipherAlphabet[ALPHABET_LENGTH + 1] = "QWERTYUIOPASDFGHJKLZXCVBNM";
+    printf("Enter a message to encrypt: ");
+    fgets(text, sizeof(text), stdin);
+    text[strcspn(text, "\n")] = 0;  
+    encrypt(text, cipherAlphabet);
+    printf("Encrypted message: %s\n", text);
+    return 0;
+}
