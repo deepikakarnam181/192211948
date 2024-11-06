@@ -1,0 +1,122 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#define SIZE 5
+void constructMatrix(char key[], char matrix[SIZE][SIZE]) {
+    int alphabet[26] = {0};  
+    int x = 0, y = 0;
+    int i; 
+    for (i = 0; key[i] != '\0'; i++) {
+        char ch = toupper(key[i]);
+        if (ch == 'J') ch = 'I';  
+        if (!alphabet[ch - 'A']) { 
+            matrix[x][y] = ch;
+            alphabet[ch - 'A'] = 1;
+            y++;
+            if (y == SIZE) { y = 0; x++; }  
+        }
+    }
+    int ch;  
+    for (ch = 'A'; ch <= 'Z'; ch++) {  
+        if (ch == 'J') continue;  
+        if (!alphabet[ch - 'A']) {
+            matrix[x][y] = (char)ch; 
+            alphabet[ch - 'A'] = 1;
+            y++;
+            if (y == SIZE) { y = 0; x++; }
+        }
+    }
+}
+
+// Function to locate a character in the matrix
+void locate(char matrix[SIZE][SIZE], char ch, int *row, int *col) {
+    if (ch == 'J') ch = 'I';  // Treat 'I' and 'J' as the same letter
+    int i, j;  // Declare 'i' and 'j' outside the for loop
+    for (i = 0; i < SIZE; i++) {
+        for (j = 0; j < SIZE; j++) {
+            if (matrix[i][j] == ch) {
+                *row = i;
+                *col = j;
+                return;
+            }
+        }
+    }
+}
+
+// Encrypt a pair of characters
+void encryptPair(char matrix[SIZE][SIZE], char *a, char *b) {
+    int row1, col1, row2, col2;
+    locate(matrix, *a, &row1, &col1);
+    locate(matrix, *b, &row2, &col2);
+    
+    if (row1 == row2) {  // Same row
+        *a = matrix[row1][(col1 + 1) % SIZE];
+        *b = matrix[row2][(col2 + 1) % SIZE];
+    } else if (col1 == col2) {  // Same column
+        *a = matrix[(row1 + 1) % SIZE][col1];
+        *b = matrix[(row2 + 1) % SIZE][col2];
+    } else {  // Rectangle
+        *a = matrix[row1][col2];
+        *b = matrix[row2][col1];
+    }
+}
+
+// Function to preprocess plaintext into digraphs
+void preprocessText(char text[]) {
+    int len = strlen(text);
+    
+    // If the length is odd, add an 'X' at the end
+    if (len % 2 != 0) {
+        text[len] = 'X';
+        text[len + 1] = '\0';
+        len++;
+    }
+    
+    // Handle repeating characters in digraphs (e.g., "LL" -> "LX LX")
+    int i;  // Declare 'i' outside the for loop
+    for (i = 0; i < len - 1; i++) {
+        if (text[i] == text[i + 1]) {
+            memmove(&text[i + 2], &text[i + 1], len - i);
+            text[i + 1] = 'X';  // Insert 'X' between repeating characters
+            len++;
+        }
+    }
+}
+
+// Main function to drive the Playfair cipher
+int main() {
+    char key[SIZE * SIZE];
+    char text[100];
+    char matrix[SIZE][SIZE];
+
+    // Input keyword and plaintext
+    printf("Enter keyword: ");
+    scanf("%s", key);
+    printf("Enter plaintext message: ");
+    scanf("%s", text);
+
+    // Remove spaces and convert text to uppercase for uniformity
+    int i;  // Declare 'i' outside the for loop
+    for (i = 0; text[i]; i++) {
+        text[i] = toupper(text[i]);
+        if (text[i] == ' ') {
+            memmove(&text[i], &text[i + 1], strlen(text) - i);  // Remove spaces
+        }
+    }
+
+    // Construct the Playfair matrix
+    constructMatrix(key, matrix);
+
+    // Prepare plaintext by adding 'X' if necessary
+    preprocessText(text);
+
+    // Encrypt the plaintext
+    for (i = 0; i < strlen(text); i += 2) {
+        encryptPair(matrix, &text[i], &text[i + 1]);
+    }
+
+    // Output the encrypted message
+    printf("Encrypted message: %s\n", text);
+
+    return 0;
+}
