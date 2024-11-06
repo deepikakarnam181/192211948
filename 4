@@ -1,0 +1,58 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+void preprocessText(char text[]) {
+    int i;
+    for (i = 0; text[i]; i++) {
+        text[i] = toupper(text[i]);
+        if (!isalpha(text[i])) {
+            memmove(&text[i], &text[i + 1], strlen(text) - i);
+        }
+    }
+}
+void vigenereEncrypt(char text[], char key[], char cipherText[]) {
+    int lenText = strlen(text);
+    int lenKey = strlen(key);
+    int j = 0; 
+    int i;
+    for (i = 0; i < lenText; i++) {
+        if (isalpha(text[i])) {
+            cipherText[i] = (text[i] + key[j] - 2 * 'A') % 26 + 'A';
+            j = (j + 1) % lenKey; 
+        } else {
+            cipherText[i] = text[i];
+        }
+    }
+    cipherText[lenText] = '\0'; // Null-terminate the encrypted text
+}
+
+int main() {
+    char text[100], key[100], cipherText[100];
+    
+    // Input the plaintext and the key
+    printf("Enter plaintext: ");
+    fgets(text, sizeof(text), stdin);
+    printf("Enter key: ");
+    fgets(key, sizeof(key), stdin);
+    
+    // Remove newline characters from the input strings if present
+    text[strcspn(text, "\n")] = '\0';
+    key[strcspn(key, "\n")] = '\0';
+    
+    // Preprocess the text to remove non-alphabet characters and convert to uppercase
+    preprocessText(text);
+    
+    // Preprocess the key to ensure it is in uppercase and repeat if necessary
+    int i;
+    for (i = 0; key[i]; i++) {
+        key[i] = toupper(key[i]);
+    }
+    
+    // Encrypt the text using Vigenère cipher
+    vigenereEncrypt(text, key, cipherText);
+    
+    // Output the encrypted text
+    printf("Encrypted text: %s\n", cipherText);
+    
+    return 0;
+}
