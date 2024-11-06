@@ -1,0 +1,62 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+void removeDuplicates(char* keyword, char* cipherAlphabet) {
+    int index = 0;
+    int seen[26] = {0};  
+    int len = strlen(keyword);
+    int i; 
+    for (i = 0; i < len; i++) {
+        char c = toupper(keyword[i]);
+        if (!seen[c - 'A']) {
+            cipherAlphabet[index++] = c;
+            seen[c - 'A'] = 1;
+        }
+    }
+    for (i = 0; i < 26; i++) {
+        if (!seen[i]) {
+            cipherAlphabet[index++] = 'A' + i;
+        }
+    }
+    cipherAlphabet[index] = '\0'; 
+}
+void encrypt(char* plaintext, char* cipherAlphabet, char* ciphertext) {
+    int i;  
+
+    for (i = 0; plaintext[i] != '\0'; i++) {
+        char c = toupper(plaintext[i]);
+
+        if (isalpha(c)) {
+            int index = c - 'A';
+            ciphertext[i] = cipherAlphabet[index];
+        } else {
+            ciphertext[i] = plaintext[i];  // Non-alphabet characters remain unchanged
+        }
+    }
+    ciphertext[i] = '\0';  // Null-terminate the ciphertext
+}
+
+int main() {
+    char keyword[] = "CIPHER";  // Keyword for generating the cipher sequence
+    char plaintext[100];  // Array to store the plaintext
+    char cipherAlphabet[27];  // Array to store the cipher alphabet (26 letters + null terminator)
+    char ciphertext[100];  // Array to store the ciphertext
+
+    // Generate the cipher alphabet using the keyword
+    removeDuplicates(keyword, cipherAlphabet);
+    
+    // Print the cipher alphabet for reference
+    printf("Cipher Alphabet: %s\n", cipherAlphabet);
+
+    // Input the plaintext from the user
+    printf("Enter the plaintext: ");
+    fgets(plaintext, sizeof(plaintext), stdin);
+    
+    // Encrypt the plaintext
+    encrypt(plaintext, cipherAlphabet, ciphertext);
+
+    // Print the ciphertext
+    printf("Encrypted ciphertext: %s\n", ciphertext);
+
+    return 0;
+}
