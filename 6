@@ -1,0 +1,78 @@
+#include <stdio.h>
+#include <string.h>
+#define ALPHABET_SIZE 26
+int modInverse(int a, int m) {
+    int x;
+    for (x = 1; x < m; x++) {
+        if ((a * x) % m == 1)
+            return x;
+    }
+    return -1;  
+}
+void affineDecrypt(char cipherText[], int a, int b, char plainText[]) {
+    int a_inv = modInverse(a, ALPHABET_SIZE);  
+    if (a_inv == -1) {
+        printf("Inverse of 'a' does not exist. Decryption failed.\n");
+        return;
+    }
+    int i;
+    for (i = 0; cipherText[i] != '\0'; i++) {
+        if (cipherText[i] >= 'A' && cipherText[i] <= 'Z') {
+            plainText[i] = (a_inv * (cipherText[i] - 'A' - b + ALPHABET_SIZE) % ALPHABET_SIZE) + 'A';
+        } else {
+            plainText[i] = cipherText[i];  
+        }
+    }
+    plainText[i] = '\0';  // Null terminate the plaintext string
+}
+
+// Function to break the affine cipher based on frequency analysis
+void breakAffineCipher(char cipherText[]) {
+    // Most frequent letters are B and U in this case
+    char mostFreqLetter = 'B';  // B corresponds to E (most frequent letter in English)
+    char secondMostFreqLetter = 'U';  // U corresponds to T (second most frequent letter in English)
+
+    // Positions of letters in the alphabet: A=0, B=1, ..., Z=25
+    int c1 = mostFreqLetter - 'A';  // B -> 1
+    int c2 = secondMostFreqLetter - 'A';  // U -> 20
+
+    // Known mappings: 
+    int p1 = 'E' - 'A';  // E -> 4 (most frequent letter in English)
+    int p2 = 'T' - 'A';  // T -> 19 (second most frequent letter in English)
+
+    // Solve the system of equations:
+    // (a * P1 + b) % 26 = C1
+    // (a * P2 + b) % 26 = C2
+    // We will solve these equations for a and b
+
+    int a, b;
+    for (a = 1; a < ALPHABET_SIZE; a++) {
+        if (modInverse(a, ALPHABET_SIZE) != -1) {  // 'a' should be coprime with 26
+            // Try solving the equations for each 'a'
+            for (b = 0; b < ALPHABET_SIZE; b++) {
+                if ((a * p1 + b) % ALPHABET_SIZE == c1 && (a * p2 + b) % ALPHABET_SIZE == c2) {
+                    // If we find a valid pair of a and b, we decrypt the text
+                    printf("Found keys a = %d, b = %d\n", a, b);
+
+                    char decryptedText[100];
+                    affineDecrypt(cipherText, a, b, decryptedText);
+                    printf("Decrypted Text: %s\n", decryptedText);
+                    return;
+                }
+            }
+        }
+    }
+
+    printf("Failed to break the cipher.\n");
+}
+
+int main() {
+    char cipherText[] = "DEEPIKA KARNAM";  // Example ciphertext
+
+    printf("Ciphertext: %s\n", cipherText);
+    
+    // Break the affine cipher using frequency analysis
+    breakAffineCipher(cipherText);
+
+    return 0;
+}
