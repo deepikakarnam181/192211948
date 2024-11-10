@@ -1,0 +1,78 @@
+#include <stdio.h>
+#include <string.h>
+
+#define BLOCK_SIZE 12
+
+// Placeholder S-DES encryption function (simplified for this context)
+unsigned short sdes_encrypt(unsigned short data, unsigned short key) {
+    // Perform a simplified transformation (for illustration only)
+    return (data ^ key) & 0xFFF;  // Assume 12-bit block size (for this example)
+}
+
+// Placeholder S-DES decryption function
+unsigned short sdes_decrypt(unsigned short data, unsigned short key) {
+    // In CTR mode, encryption and decryption are identical
+    return sdes_encrypt(data, key);
+}
+
+// Function to increment counter (12-bit counter for this example)
+unsigned short increment_counter(unsigned short counter) {
+    return (counter + 1) & 0xFFF;  // Increment and wrap to 12 bits
+}
+
+// Function to encrypt/decrypt using S-DES in Counter Mode (CTR)
+void ctr_mode(unsigned short *plaintext, unsigned short *ciphertext, int length, unsigned short key, unsigned short counter_start) {
+    unsigned short counter = counter_start;
+    int i;
+
+    for (i = 0; i < length; i++) {
+        // Encrypt counter to produce keystream
+        unsigned short keystream = sdes_encrypt(counter, key);
+
+        // XOR plaintext with keystream to get ciphertext
+        ciphertext[i] = plaintext[i] ^ keystream;
+
+        // Increment counter
+        counter = increment_counter(counter);
+    }
+}
+
+int main() {
+    unsigned short key = 0x7FD;  // Binary key 01111 11101 (12 bits)
+    unsigned short counter_start = 0x000;  // Counter starting at 0000 0000
+
+    unsigned short plaintext[BLOCK_SIZE / 4] = {
+        0x001,  // Binary 0000 0001
+        0x002,  // Binary 0000 0010
+        0x004   // Binary 0000 0100
+    };
+    unsigned short ciphertext[BLOCK_SIZE / 4];
+    unsigned short decrypted[BLOCK_SIZE / 4];
+    int i;
+
+    printf("Original plaintext blocks:\n");
+    for (i = 0; i < BLOCK_SIZE / 4; i++) {
+        printf("%04X ", plaintext[i]);
+    }
+    printf("\n");
+
+    // Encrypt
+    ctr_mode(plaintext, ciphertext, BLOCK_SIZE / 4, key, counter_start);
+
+    printf("Ciphertext blocks (after encryption in CTR mode):\n");
+    for (i = 0; i < BLOCK_SIZE / 4; i++) {
+        printf("%04X ", ciphertext[i]);
+    }
+    printf("\n");
+
+    // Decrypt
+    ctr_mode(ciphertext, decrypted, BLOCK_SIZE / 4, key, counter_start);
+
+    printf("Decrypted plaintext blocks:\n");
+    for (i = 0; i < BLOCK_SIZE / 4; i++) {
+        printf("%04X ", decrypted[i]);
+    }
+    printf("\n");
+
+    return 0;
+}
