@@ -1,0 +1,82 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define ALPHABET_SIZE 26
+
+void calculate_frequency(const char *text, int *freq) {
+    int i;
+    for (i = 0; text[i] != '\0'; i++) {
+        if (isalpha(text[i])) {
+            char c = tolower(text[i]);
+            freq[c - 'a']++;
+        }
+    }
+}
+
+void decrypt_with_shift(const char *ciphertext, int shift, char *plaintext) {
+    int i;
+    for (i = 0; ciphertext[i] != '\0'; i++) {
+        if (isalpha(ciphertext[i])) {
+            char c = tolower(ciphertext[i]);
+            c = (c - 'a' - shift + ALPHABET_SIZE) % ALPHABET_SIZE + 'a';  
+            plaintext[i] = c;
+        } else {
+            plaintext[i] = ciphertext[i];
+        }
+    }
+    plaintext[strlen(ciphertext)] = '\0';
+}
+
+int rank_plaintext(const char *plaintext) {
+    int freq[ALPHABET_SIZE] = {0};
+    calculate_frequency(plaintext, freq);
+    return freq['e' - 'a'];
+}
+
+void letter_frequency_attack(const char *ciphertext, int top_n) {
+    int freq[ALPHABET_SIZE] = {0};
+    int max_freq, shift, i, j, temp;
+    int rankings[ALPHABET_SIZE];
+    int shift_rankings[ALPHABET_SIZE];
+    char decrypted[1000];
+
+    calculate_frequency(ciphertext, freq);
+
+    max_freq = freq['e' - 'a'];
+
+    for (shift = 0; shift < ALPHABET_SIZE; shift++) {
+        decrypt_with_shift(ciphertext, shift, decrypted);
+        rankings[shift] = rank_plaintext(decrypted);
+        shift_rankings[shift] = shift;
+    }
+
+    for (i = 0; i < ALPHABET_SIZE - 1; i++) {
+        for (j = i + 1; j < ALPHABET_SIZE; j++) {
+            if (rankings[i] < rankings[j]) {
+                temp = rankings[i];
+                rankings[i] = rankings[j];
+                rankings[j] = temp;
+
+                temp = shift_rankings[i];
+                shift_rankings[i] = shift_rankings[j];
+                shift_rankings[j] = temp;
+            }
+        }
+    }
+
+    printf("Top %d possible plaintexts based on frequency analysis:\n", top_n);
+    for (i = 0; i < top_n; i++) {
+        decrypt_with_shift(ciphertext, shift_rankings[i], decrypted);
+        printf("%d. %s\n", i + 1, decrypted);
+    }
+}
+
+int main() {
+    char ciphertext[] = "Xlmw mw xlmw mw xlmw mw";
+    int top_n = 3;
+
+    letter_frequency_attack(ciphertext, top_n);
+
+    return 0;
+}
