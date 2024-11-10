@@ -1,0 +1,58 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+/* Function to perform the encryption: E_K(X) = (X + K) mod 256 */
+unsigned char encrypt(unsigned char X, unsigned char K) {
+    return (X + K) % 256;
+}
+
+/* Function to compute CBC-MAC */
+unsigned char cbc_mac(unsigned char *message, int length, unsigned char K) {
+    unsigned char IV = 0;  /* Initialization Vector set to zero */
+    unsigned char C = IV;
+    int i;
+
+    for (i = 0; i < length; i++) {
+        C = encrypt(message[i] ^ C, K);
+    }
+
+    return C;  /* MAC */
+}
+
+int main() {
+    unsigned char K = 100;          /* Secret key */
+    unsigned char X = 50;           /* Original one-block message */
+    unsigned char T;                /* MAC of the original message */
+    unsigned char forged_message[2];
+    unsigned char forged_mac;
+
+    /* Original Message */
+    unsigned char original_message[1];
+    original_message[0] = X;
+
+    /* Compute MAC of the original message */
+    T = cbc_mac(original_message, 1, K);
+    printf("Original Message (X): %d\n", X);
+    printf("MAC(T) of Original Message: %d\n\n", T);
+
+    /* Adversary creates a forged message: X || (X XOR T) */
+    forged_message[0] = X;
+    forged_message[1] = X ^ T;
+
+    printf("Forged Message (X || (X XOR T)): %d, %d\n", forged_message[0], forged_message[1]);
+
+    /* Compute MAC of the forged message */
+    /* Since CBC-MAC is linear with the given encryption function, 
+       MAC(X || (X XOR T)) = E_K(X XOR IV) = T */
+    forged_mac = cbc_mac(forged_message, 2, K);
+    printf("MAC(T) of Forged Message: %d\n\n", forged_mac);
+
+    /* Demonstrate that forged_mac equals T */
+    if (forged_mac == T) {
+        printf("Success: The forged MAC matches the original MAC.\n");
+    } else {
+        printf("Failure: The forged MAC does not match the original MAC.\n");
+    }
+
+    return 0;
+}
