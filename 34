@@ -1,0 +1,102 @@
+#include <stdio.h>
+#include <string.h>
+
+#define BLOCK_SIZE 16 
+
+void aes_encrypt(unsigned char *block, const unsigned char *key) {
+    int i;
+    for (i = 0; i < BLOCK_SIZE; i++) {
+        block[i] ^= key[i];
+    }
+}
+
+void pad_plaintext(unsigned char *plaintext, int *length) {
+    int padding_needed = BLOCK_SIZE - (*length % BLOCK_SIZE);
+    int i;
+    for (i = *length; i < *length + padding_needed; i++) {
+        plaintext[i] = padding_needed;
+    }
+    *length += padding_needed;
+}
+
+void ecb_encrypt(unsigned char *plaintext, unsigned char *ciphertext, const unsigned char *key, int length) {
+    int i;
+    for (i = 0; i < length; i += BLOCK_SIZE) {
+        aes_encrypt(plaintext + i, key);
+        memcpy(ciphertext + i, plaintext + i, BLOCK_SIZE);
+    }
+}
+
+void cbc_encrypt(unsigned char *plaintext, unsigned char *ciphertext, const unsigned char *key, unsigned char *iv, int length) {
+    unsigned char previous_block[BLOCK_SIZE];
+    int i, j;
+    memcpy(previous_block, iv, BLOCK_SIZE);
+
+    for (i = 0; i < length; i += BLOCK_SIZE) {
+        for (j = 0; j < BLOCK_SIZE; j++) {
+            plaintext[i + j] ^= previous_block[j];
+        }
+        aes_encrypt(plaintext + i, key);
+        memcpy(ciphertext + i, plaintext + i, BLOCK_SIZE);
+        memcpy(previous_block, ciphertext + i, BLOCK_SIZE);
+    }
+}
+
+void cfb_encrypt(unsigned char *plaintext, unsigned char *ciphertext, const unsigned char *key, unsigned char *iv, int length) {
+    unsigned char feedback[BLOCK_SIZE];
+    unsigned char temp[BLOCK_SIZE];
+    int i;
+
+    memcpy(feedback, iv, BLOCK_SIZE);
+
+    for (i = 0; i < length; i++) {
+        aes_encrypt(feedback, key); // Encrypt feedback block
+        ciphertext[i] = plaintext[i] ^ feedback[0]; // XOR with the first byte of the feedback
+
+        // Shift feedback left by 1 byte
+        memmove(feedback, feedback + 1, BLOCK_SIZE - 1);
+        feedback[BLOCK_SIZE - 1] = ciphertext[i]; // Append ciphertext byte to feedback
+    }
+}
+
+int main() {
+    unsigned char plaintext[] = "Hello, this is a test message!";
+    int length = strlen((char *)plaintext);
+
+    unsigned char key[BLOCK_SIZE] = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 
+                                      0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef };
+    unsigned char iv[BLOCK_SIZE] = { 0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef, 
+                                     0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef };
+
+    pad_plaintext(plaintext, &length);
+
+    unsigned char ciphertext[length];
+    unsigned char decrypted[length];
+    int i;
+
+    // ECB Mode Encryption
+    ecb_encrypt(plaintext, ciphertext, key, length);
+    printf("ECB Ciphertext (Hex): ");
+    for (i = 0; i < length; i++) {
+        printf("%02x", ciphertext[i]);
+    }
+    printf("\n");
+
+    // CBC Mode Encryption
+    cbc_encrypt(plaintext, ciphertext, key, iv, length);
+    printf("CBC Ciphertext (Hex): ");
+    for (i = 0; i < length; i++) {
+        printf("%02x", ciphertext[i]);
+    }
+    printf("\n");
+
+    // CFB Mode Encryption
+    cfb_encrypt(plaintext, ciphertext, key, iv, length);
+    printf("CFB Ciphertext (Hex): ");
+    for (i = 0; i < length; i++) {
+        printf("%02x", ciphertext[i]);
+    }
+    printf("\n");
+
+    return 0;
+}
